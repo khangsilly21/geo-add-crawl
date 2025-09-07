@@ -47,7 +47,11 @@ async def fetch_data(
             {"value": tx.value, "block_timestamp": tx.block_timestamp}
             for tx in txMeta_list
         ]
-        return {"address": address, "tokens": token_list, "transactions": tx_list}
+        
+        balance :str = await chainbase_crawler_client.get_balance(
+            api_key=api_key, address=address, chain_id=1)
+        
+        return {"address": address, "tokens": token_list, "transactions": tx_list, "balance": balance}
     except Exception as e:
         logger.error(msg=f"Error fetching data for address={address}: {e}")
         return {"address": address, "tokens": [], "transactions": []}

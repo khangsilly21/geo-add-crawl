@@ -14,6 +14,7 @@ logger: Logger = logging.getLogger(name=__name__)
 class EndPoint(str, Enum):
     TOKEN = "/account/tokens"
     TRANSACTION = "/account/txs"
+    BALANCE = "/account/balance"
 
 
 class ChainbaseAPIError(Exception):
@@ -36,6 +37,10 @@ class ChainbaseResponse(BaseModel):
     message: str
     data: Any | None
     next_page: int | None = None
+    
+class BalanceResponse(ChainbaseResponse):
+    data: str = Field(..., description="The balance of the address in wei.")
+    
 
 
 class TokenListResponse(ChainbaseResponse):
@@ -141,3 +146,35 @@ class ChainbaseCrawlerService:
         )
         list_tokens: list[TokenMeta] = [TokenMeta(**token) for token in tokens]
         return list_tokens
+
+    async def get_balance(
+        self, api_key: str, address: str, chain_id: int = 1
+    ) -> str:
+        params: dict[str, Any] = {
+            "chain_id": chain_id,
+            "address": address,
+        }
+        res: dict[str, Any] | list[dict[str, Any]] | None = await self.http_client.get(
+            url=self.base_url + EndPoint.BALANCE,
+            params=params,
+            headers={"x-api-key": api_key},
+        )
+        if res is None:
+            logger.warning(msg="Could not received response from Chainbase API")
+            return "0"
+
+        if not isinstance(res, dict):
+            logger.error(msg=f"Unexpected response: {res}")
+            raise ChainbaseAPIError(f"Unexpected response: {res}")
+
+        cb_res: BalanceResponse = BalanceResponse(**res)
+        if cb_res.code != 0:
+            logger.warning(msg=f"Chainbase API Error: {res}")
+            raise ChainbaseAPIError(f"Chainbase API Error: {res}")
+
+        balance: str = cb_res.data or "0x0"
+        logger.info(
+            msg=f"Fetched balance for address {address} on chain {chain_id}: {balance}"
+        )
+        return balance
+    
