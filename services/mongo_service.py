@@ -1,9 +1,7 @@
 import logging
-import os
 from logging import Logger
 from typing import Any
 
-from dotenv import load_dotenv
 from motor.motor_asyncio import (
     AsyncIOMotorClient,
     AsyncIOMotorCollection,
@@ -11,16 +9,15 @@ from motor.motor_asyncio import (
 )
 
 logger: Logger = logging.getLogger(name=__name__)
-_ = load_dotenv()
 
 
 class MongoService:
-    def __init__(self) -> None:
+    def __init__(self, uri: str, db_name: str) -> None:
         self.client: AsyncIOMotorClient[Any] = AsyncIOMotorClient(
-            os.getenv("MONGO_URI")
+            host = uri
         )
         self.db: AsyncIOMotorDatabase[Any] = self.client[
-            os.getenv("DB_NAME", "geo_data")
+            db_name
         ]
 
     async def close(self) -> None:
@@ -34,3 +31,15 @@ class MongoService:
         Get a MongoDB collection by name.
         """
         return self.db[collection_name]
+
+    async def get_prediction(self, address: str):
+        result = await self.pred_col.find_one({"address": address})
+        return result
+    
+    async def record_prediction(self, address: str, label: str):
+        _ = self.pred_col.update_one(
+            filter={'address': address},
+            update={"$set": {"address": address, "label": label}},
+            upsert=True
+        )
+        logger.info(msg=f"Đã lưu kết quả dự đoán cho địa chỉ {address} vào DB.")

@@ -113,14 +113,14 @@ class ChainbaseCrawlerService:
                 break
 
             params["page"] += 1
-        if not results or len(results) == 0:
-            logger.warning(
-                msg=f"No data found for {endpoint} with address {address} on chain {chain_id}"
-            )
-        else:
-            logger.info(
-                msg=f"Fetched {len(results)} items from {endpoint} for address {address} on chain {chain_id}"
-            )
+        # if not results or len(results) == 0:
+        #     logger.warning(
+        #         msg=f"No data found for {endpoint} with address {address} on chain {chain_id}"
+        #     )
+        # else:
+        #     logger.info(
+        #         msg=f"Fetched {len(results)} items from {endpoint} for address {address} on chain {chain_id}"
+        #     )
         return results
 
     async def get_transactions(
@@ -173,8 +173,5 @@ class ChainbaseCrawlerService:
             raise ChainbaseAPIError(f"Chainbase API Error: {res}")
 
         balance: str = cb_res.data or "0x0"
-        logger.info(
-            msg=f"Fetched balance for address {address} on chain {chain_id}: {balance}"
-        )
         return balance
     
