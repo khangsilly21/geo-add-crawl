@@ -21,8 +21,3 @@ class ServiceClient:
             )
         return cls._chainbase_crawler_service
 
-    @classmethod
-    def get_mongo_service(cls) -> MongoService:
-        if not cls._mongo_service:
-            cls._mongo_service = MongoService()
-        return cls._mongo_service
